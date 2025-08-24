@@ -137,9 +137,20 @@ class NT_GameInit
         
         lastCheckTime = currentTime;
     }
+    
+    // Static method เพื่อเข้าถึง static variable
+    static bool IsInitialized()
+    {
+        return g_NT_GameInitialized;
+    }
+    
+    static void SetInitialized(bool value)
+    {
+        g_NT_GameInitialized = value;
+    }
 }
 
-// Global utility functions (outside of class)
+// Global utility functions
 string NT_GetSystemVersion()
 {
     return "2.0";
@@ -261,7 +272,7 @@ string NT_GetSystemInfo()
     info += "System Name: NT AntiCheat System\n";
     info += "Version: 2.0\n";
     info += "Author: NT Development\n";
-    info += "Initialized: " + (NT_GameInit.g_NT_GameInitialized ? "YES" : "NO") + "\n";
+    info += "Initialized: " + (NT_GameInit.IsInitialized() ? "YES" : "NO") + "\n";
     info += "Server Mode: " + (GetGame().IsServer() ? "YES" : "NO") + "\n";
     info += "Config Directory: $profile:/nt-anticheat/\n";
     info += "Log Directory: $profile:/nt-anticheat/logs/\n";
@@ -273,11 +284,11 @@ string NT_GetSystemInfo()
 
 void NT_Shutdown()
 {
-    if (NT_GameInit.g_NT_GameInitialized)
+    if (NT_GameInit.IsInitialized())
     {
         Print("[NT_AntiCheat] Game module shutting down...");
         NT_CleanupResources();
-        NT_GameInit.g_NT_GameInitialized = false;
+        NT_GameInit.SetInitialized(false);
         Print("[NT_AntiCheat] Game module shutdown completed");
     }
 }
