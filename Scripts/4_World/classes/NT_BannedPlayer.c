@@ -31,7 +31,7 @@ class NT_BannedPlayer
         violationCount = 0;
     }
     
-    void InitializeBan(string pSteamId, string pPlayerName, string pReason, string pBanType, float pDetectedValue = 0.0)
+    void InitializeBan(string pSteamId, string pPlayerName, string pReason, string pBanType, float pDetectedValue)
     {
         steamId = pSteamId;
         playerName = pPlayerName;
@@ -40,20 +40,17 @@ class NT_BannedPlayer
         detectedValue = pDetectedValue;
         isPermanent = true;
         
-        // สร้าง Ban ID
         banId = GenerateUniqueBanId();
-        
-        // ตั้งค่าวันที่และเวลา
         SetCurrentDateTime();
         
-        // ตั้งชื่อเซิร์ฟเวอร์
-        if (GetGame() && GetGame().GetHostName() != "")
+        serverName = "DayZ Server";
+        if (GetGame())
         {
-            serverName = GetGame().GetHostName();
-        }
-        else
-        {
-            serverName = "DayZ Server";
+            string hostname = GetGame().GetHostName();
+            if (hostname != "")
+            {
+                serverName = hostname;
+            }
         }
     }
     
@@ -63,15 +60,8 @@ class NT_BannedPlayer
         GetYearMonthDay(year, month, day);
         GetHourMinuteSecond(hour, minute, second);
         
-        banDate = string.Format("%1-%2-%3", year.ToString(), AddLeadingZero(month), AddLeadingZero(day));
-        banTime = string.Format("%1:%2:%3", AddLeadingZero(hour), AddLeadingZero(minute), AddLeadingZero(second));
-    }
-    
-    string AddLeadingZero(int value)
-    {
-        if (value < 10)
-            return "0" + value.ToString();
-        return value.ToString();
+        banDate = year.ToString() + "-" + month.ToString() + "-" + day.ToString();
+        banTime = hour.ToString() + ":" + minute.ToString() + ":" + second.ToString();
     }
     
     string GenerateUniqueBanId()
@@ -84,32 +74,37 @@ class NT_BannedPlayer
     string GetFullBanInfo()
     {
         string info = "=== NT ANTICHEAT BAN INFORMATION ===\n";
-        info += "Player: " + playerName + "\n";
-        info += "SteamID: " + steamId + "\n";
-        info += "Reason: " + reason + "\n";
-        info += "Ban Type: " + banType + "\n";
-        info += "Ban Date: " + banDate + " " + banTime + "\n";
-        info += "Ban ID: " + banId + "\n";
-        info += "Server: " + serverName + "\n";
+        info = info + "Player: " + playerName + "\n";
+        info = info + "SteamID: " + steamId + "\n";
+        info = info + "Reason: " + reason + "\n";
+        info = info + "Ban Type: " + banType + "\n";
+        info = info + "Ban Date: " + banDate + " " + banTime + "\n";
+        info = info + "Ban ID: " + banId + "\n";
+        info = info + "Server: " + serverName + "\n";
         
-        if (detectedValue > 0)
+        if (detectedValue > 0.0)
         {
-            info += "Detected Value: " + detectedValue.ToString() + "\n";
+            info = info + "Detected Value: " + detectedValue.ToString() + "\n";
         }
         
         if (violationCount > 0)
         {
-            info += "Violation Count: " + violationCount.ToString() + "\n";
+            info = info + "Violation Count: " + violationCount.ToString() + "\n";
         }
         
-        info += "Status: " + (isPermanent ? "PERMANENT BAN" : "TEMPORARY BAN") + "\n";
-        info += "\nContact server admin with Ban ID if you believe this is an error.";
+        info = info + "Status: PERMANENT BAN\n";
+        info = info + "\nContact server admin with Ban ID if you believe this is an error.";
         
         return info;
     }
     
     bool IsValidBan()
     {
-        return (steamId != "" && playerName != "" && reason != "" && banType != "" && banId != "");
+        if (steamId == "") return false;
+        if (playerName == "") return false;
+        if (reason == "") return false;
+        if (banType == "") return false;
+        if (banId == "") return false;
+        return true;
     }
 };

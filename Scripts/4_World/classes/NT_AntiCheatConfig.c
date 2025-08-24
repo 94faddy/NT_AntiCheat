@@ -1,19 +1,19 @@
 class NT_AntiCheatConfig
 {
-    float checkInterval;        // วินาทีระหว่างการตรวจสอบ
-    float maxSpeed;            // ความเร็วสูงสุด (m/s)
-    float maxHeight;           // ความสูงสูงสุดจากพื้น (m)
-    float maxTeleportDistance; // ระยะทางเทเลพอร์ตสูงสุด (m)
-    bool enableSpeedCheck;     // เปิดตรวจสอบ Speed Hack
-    bool enableFlyCheck;       // เปิดตรวจสอบ Fly Hack
-    bool enableTeleportCheck;  // เปิดตรวจสอบ Teleport Hack
-    bool enableGodModeCheck;   // เปิดตรวจสอบ God Mode
-    bool enableNoClipCheck;    // เปิดตรวจสอบ NoClip
-    bool autoKickEnabled;      // เปิดใช้ auto kick
-    bool autoBanEnabled;       // เปิดใช้ auto ban
-    int logLevel;              // ระดับ log (0=ปิด, 1=console, 2=file)
-    int maxViolationsBeforeBan; // จำนวนการละเมิดก่อนแบน
-    float saveInterval;        // ช่วงเวลาการบันทึกข้อมูล (วินาที)
+    float checkInterval;
+    float maxSpeed;
+    float maxHeight;
+    float maxTeleportDistance;
+    bool enableSpeedCheck;
+    bool enableFlyCheck;
+    bool enableTeleportCheck;
+    bool enableGodModeCheck;
+    bool enableNoClipCheck;
+    bool autoKickEnabled;
+    bool autoBanEnabled;
+    int logLevel;
+    int maxViolationsBeforeBan;
+    float saveInterval;
     
     void NT_AntiCheatConfig()
     {
@@ -33,7 +33,6 @@ class NT_AntiCheatConfig
         saveInterval = 30.0;
     }
     
-    // ฟังก์ชันสำหรับตรวจสอบค่าที่ถูกต้อง
     void ValidateConfig()
     {
         if (checkInterval < 1.0) checkInterval = 1.0;

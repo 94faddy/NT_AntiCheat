@@ -7,11 +7,8 @@ modded class MissionServer
     {
         super.OnInit();
         
-        Print("=================================================");
         Print("[NT_AntiCheat] Initializing AntiCheat System...");
-        Print("=================================================");
         
-        // Initialize AntiCheat System
         m_AntiCheatManager = new NT_AntiCheatManager();
         m_AntiCheatInitialized = false;
         
@@ -20,7 +17,6 @@ modded class MissionServer
             m_AntiCheatInitialized = true;
             Print("[NT_AntiCheat] AntiCheat Manager created successfully!");
             
-            // Delay the config initialization to ensure proper server startup
             GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(this.DelayedInitialization, 3000, false);
         }
         else
@@ -42,42 +38,46 @@ modded class MissionServer
             Print("[NT_AntiCheat] Status: ACTIVE");
             Print("=================================================");
             
-            // Display system information
             string systemInfo = m_AntiCheatManager.GetSystemInfo();
             Print(systemInfo);
         }
         else
         {
-            Print("[NT_AntiCheat] ERROR: AntiCheat Manager not available for delayed initialization!");
+            Print("[NT_AntiCheat] ERROR: AntiCheat Manager not available!");
         }
     }
     
-    override void OnClientConnectedEvent(PlayerIdentity identity, PlayerBase player)
+    override PlayerBase OnClientNewEvent(PlayerIdentity identity, vector pos, ParamsReadContext ctx)
     {
-        super.OnClientConnectedEvent(identity, player);
+        PlayerBase player = super.OnClientNewEvent(identity, pos, ctx);
         
-        if (m_AntiCheatManager && m_AntiCheatInitialized && identity && player)
+        if (m_AntiCheatManager)
         {
-            // Add a small delay to ensure player is fully loaded
-            GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(this.HandlePlayerConnection, 1000, false, identity, player);
+            if (m_AntiCheatInitialized)
+            {
+                if (identity)
+                {
+                    if (player)
+                    {
+                        GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(this.HandlePlayerConnection, 2000, false, identity, player);
+                    }
+                }
+            }
         }
-        else if (!m_AntiCheatInitialized)
-        {
-            Print("[NT_AntiCheat] WARNING: Player connected but AntiCheat not yet initialized");
-        }
+        
+        return player;
     }
     
     void HandlePlayerConnection(PlayerIdentity identity, PlayerBase player)
     {
-        if (m_AntiCheatManager && identity && player)
+        if (m_AntiCheatManager)
         {
-            try
+            if (identity)
             {
-                m_AntiCheatManager.OnPlayerConnect(identity, player);
-            }
-            catch
-            {
-                Print("[NT_AntiCheat] ERROR: Exception occurred during player connection handling");
+                if (player)
+                {
+                    m_AntiCheatManager.OnPlayerConnect(identity, player);
+                }
             }
         }
     }
@@ -86,15 +86,14 @@ modded class MissionServer
     {
         super.OnClientDisconnectedEvent(identity, player, logoutTime, authFailed);
         
-        if (m_AntiCheatManager && m_AntiCheatInitialized && identity)
+        if (m_AntiCheatManager)
         {
-            try
+            if (m_AntiCheatInitialized)
             {
-                m_AntiCheatManager.OnPlayerDisconnect(identity);
-            }
-            catch
-            {
-                Print("[NT_AntiCheat] ERROR: Exception occurred during player disconnection handling");
+                if (identity)
+                {
+                    m_AntiCheatManager.OnPlayerDisconnect(identity);
+                }
             }
         }
     }
@@ -103,68 +102,46 @@ modded class MissionServer
     {
         super.OnUpdate(timeslice);
         
-        if (m_AntiCheatManager && m_AntiCheatInitialized)
+        if (m_AntiCheatManager)
         {
-            try
+            if (m_AntiCheatInitialized)
             {
                 m_AntiCheatManager.Update(timeslice);
-            }
-            catch
-            {
-                Print("[NT_AntiCheat] ERROR: Exception occurred during update cycle");
-                // Optionally disable the system if there are persistent errors
-                // m_AntiCheatManager.SetSystemEnabled(false);
             }
         }
     }
     
-    // Admin commands integration (optional)
     override void OnClientRespawnEvent(PlayerIdentity identity, PlayerBase player)
     {
         super.OnClientRespawnEvent(identity, player);
         
-        if (m_AntiCheatManager && m_AntiCheatInitialized && identity && player)
+        if (m_AntiCheatManager)
         {
-            // Re-initialize tracking for respawned player
-            GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(this.HandlePlayerRespawn, 2000, false, identity, player);
+            if (m_AntiCheatInitialized)
+            {
+                if (identity)
+                {
+                    if (player)
+                    {
+                        string steamId = identity.GetPlainId();
+                        string playerName = identity.GetName();
+                        Print("[NT_AntiCheat] Player respawned: " + playerName + " (" + steamId + ")");
+                    }
+                }
+            }
         }
     }
     
-    void HandlePlayerRespawn(PlayerIdentity identity, PlayerBase player)
-    {
-        if (m_AntiCheatManager && identity && player)
-        {
-            string steamId = identity.GetPlainId();
-            Print(string.Format("[NT_AntiCheat] Player respawned, reinitializing tracker: %1 (%2)", 
-                identity.GetName(), steamId));
-                
-            // The tracker will be updated automatically on the next update cycle
-        }
-    }
-    
-    // Shutdown handler
     override void OnMissionFinish()
     {
         if (m_AntiCheatManager)
         {
             Print("[NT_AntiCheat] Mission ending - saving final data...");
-            
-            // Force save all data before shutdown
-            try
-            {
-                // This would need to be implemented in the manager if needed
-                // m_AntiCheatManager.ForceDataSave();
-            }
-            catch
-            {
-                Print("[NT_AntiCheat] ERROR: Exception during final data save");
-            }
         }
         
         super.OnMissionFinish();
     }
     
-    // Public methods for admin commands or other mods to interact with
     NT_AntiCheatManager GetAntiCheatManager()
     {
         return m_AntiCheatManager;
@@ -172,63 +149,97 @@ modded class MissionServer
     
     bool IsAntiCheatInitialized()
     {
-        return m_AntiCheatInitialized && m_AntiCheatManager;
+        if (m_AntiCheatInitialized)
+        {
+            if (m_AntiCheatManager)
+            {
+                return true;
+            }
+        }
+        return false;
     }
     
     void AdminCommand_ReloadAntiCheat(PlayerIdentity identity)
     {
-        if (m_AntiCheatManager && IsAdminPlayer(identity))
+        if (m_AntiCheatManager)
         {
-            Print("[NT_AntiCheat] Admin " + identity.GetName() + " requested configuration reload");
-            m_AntiCheatManager.ReloadConfiguration();
+            if (IsAdminPlayer(identity))
+            {
+                string adminName = identity.GetName();
+                Print("[NT_AntiCheat] Admin " + adminName + " requested configuration reload");
+                m_AntiCheatManager.ReloadConfiguration();
+            }
         }
     }
     
     void AdminCommand_AntiCheatStatus(PlayerIdentity identity)
     {
-        if (m_AntiCheatManager && IsAdminPlayer(identity))
+        if (m_AntiCheatManager)
         {
-            string info = m_AntiCheatManager.GetSystemInfo();
-            Print(info);
-            // You could also send this info directly to the admin if you have a messaging system
+            if (IsAdminPlayer(identity))
+            {
+                string info = m_AntiCheatManager.GetSystemInfo();
+                Print(info);
+            }
         }
     }
     
     void AdminCommand_ToggleAntiCheat(PlayerIdentity identity, bool enabled)
     {
-        if (m_AntiCheatManager && IsAdminPlayer(identity))
+        if (m_AntiCheatManager)
         {
-            m_AntiCheatManager.SetSystemEnabled(enabled);
-            Print(string.Format("[NT_AntiCheat] Admin %1 %2 the AntiCheat system", 
-                identity.GetName(), enabled ? "enabled" : "disabled"));
+            if (IsAdminPlayer(identity))
+            {
+                m_AntiCheatManager.SetSystemEnabled(enabled);
+                string adminName = identity.GetName();
+                string status;
+                if (enabled)
+                {
+                    status = "enabled";
+                }
+                else
+                {
+                    status = "disabled";
+                }
+                Print("[NT_AntiCheat] Admin " + adminName + " " + status + " the AntiCheat system");
+            }
         }
     }
     
     void AdminCommand_WhitelistPlayer(PlayerIdentity identity, string targetSteamId, string targetPlayerName, string reason)
     {
-        if (m_AntiCheatManager && IsAdminPlayer(identity))
+        if (m_AntiCheatManager)
         {
-            m_AntiCheatManager.AddPlayerToWhitelist(targetSteamId, targetPlayerName, reason, identity.GetName());
+            if (IsAdminPlayer(identity))
+            {
+                string adminName = identity.GetName();
+                m_AntiCheatManager.AddPlayerToWhitelist(targetSteamId, targetPlayerName, reason, adminName);
+            }
         }
     }
     
     void AdminCommand_UnWhitelistPlayer(PlayerIdentity identity, string targetSteamId)
     {
-        if (m_AntiCheatManager && IsAdminPlayer(identity))
+        if (m_AntiCheatManager)
         {
-            m_AntiCheatManager.RemovePlayerFromWhitelist(targetSteamId);
+            if (IsAdminPlayer(identity))
+            {
+                m_AntiCheatManager.RemovePlayerFromWhitelist(targetSteamId);
+            }
         }
     }
     
     void AdminCommand_UnbanPlayer(PlayerIdentity identity, string targetSteamId)
     {
-        if (m_AntiCheatManager && IsAdminPlayer(identity))
+        if (m_AntiCheatManager)
         {
-            m_AntiCheatManager.UnbanPlayer(targetSteamId);
+            if (IsAdminPlayer(identity))
+            {
+                m_AntiCheatManager.UnbanPlayer(targetSteamId);
+            }
         }
     }
     
-    // Helper method to check if player is admin - you might need to adjust this based on your admin system
     bool IsAdminPlayer(PlayerIdentity identity)
     {
         if (!identity)
@@ -236,14 +247,10 @@ modded class MissionServer
             
         string steamId = identity.GetPlainId();
         
-        // Check if player is in whitelist (assuming whitelisted = admin)
         if (m_AntiCheatManager)
         {
             return m_AntiCheatManager.IsPlayerWhitelisted(steamId);
         }
-        
-        // Alternative: Check against server admin list or your custom admin system
-        // return GetGame().IsPlayerListAdmin(identity);
         
         return false;
     }

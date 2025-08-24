@@ -23,7 +23,7 @@ class NT_AdminWhitelist
         notes = "";
     }
     
-    void InitializeWhitelist(string pSteamId, string pPlayerName, string pReason, string pAddedBy = "System", string pAdminLevel = "Administrator")
+    void InitializeWhitelist(string pSteamId, string pPlayerName, string pReason, string pAddedBy, string pAdminLevel)
     {
         steamId = pSteamId;
         playerName = pPlayerName;
@@ -32,7 +32,6 @@ class NT_AdminWhitelist
         adminLevel = pAdminLevel;
         isActive = true;
         
-        // ตั้งค่าวันที่และเวลา
         SetCurrentDateTime();
     }
     
@@ -42,60 +41,33 @@ class NT_AdminWhitelist
         GetYearMonthDay(year, month, day);
         GetHourMinuteSecond(hour, minute, second);
         
-        addedDate = string.Format("%1-%2-%3", year.ToString(), AddLeadingZero(month), AddLeadingZero(day));
-        addedTime = string.Format("%1:%2:%3", AddLeadingZero(hour), AddLeadingZero(minute), AddLeadingZero(second));
-    }
-    
-    string AddLeadingZero(int value)
-    {
-        if (value < 10)
-            return "0" + value.ToString();
-        return value.ToString();
+        addedDate = year.ToString() + "-" + month.ToString() + "-" + day.ToString();
+        addedTime = hour.ToString() + ":" + minute.ToString() + ":" + second.ToString();
     }
     
     bool IsValid()
     {
-        return (steamId != "" && steamId.Length() == 17 && playerName != "" && reason != "");
+        if (steamId == "")
+            return false;
+        if (steamId.Length() != 17)
+            return false;
+        if (playerName == "")
+            return false;
+        if (reason == "")
+            return false;
+        return true;
     }
     
     bool IsValidSteamId(string checkSteamId)
     {
-        // ตรวจสอบว่า SteamID64 มีความยาว 17 หลักและเป็นตัวเลข
         if (checkSteamId.Length() != 17)
             return false;
-            
-        // ตรวจสอบว่าเป็นตัวเลขทั้งหมด
-        for (int i = 0; i < checkSteamId.Length(); i++)
-        {
-            string char = checkSteamId.Substring(i, 1);
-            if (char != "0" && char != "1" && char != "2" && char != "3" && char != "4" && 
-                char != "5" && char != "6" && char != "7" && char != "8" && char != "9")
-            {
-                return false;
-            }
-        }
-        
-        // SteamID64 ต้องขึ้นต้นด้วย 765611980 หรือ 765611981
-        string prefix = checkSteamId.Substring(0, 9);
-        return (prefix == "765611980" || prefix == "765611981");
+        return true;
     }
     
     string GetWhitelistInfo()
     {
-        string info = "=== ADMIN WHITELIST INFO ===\n";
-        info += "Player: " + playerName + "\n";
-        info += "SteamID: " + steamId + "\n";
-        info += "Admin Level: " + adminLevel + "\n";
-        info += "Reason: " + reason + "\n";
-        info += "Added Date: " + addedDate + " " + addedTime + "\n";
-        info += "Added By: " + addedBy + "\n";
-        info += "Status: " + (isActive ? "ACTIVE" : "INACTIVE") + "\n";
-        
-        if (notes != "")
-        {
-            info += "Notes: " + notes + "\n";
-        }
-        
+        string info = "Admin: " + playerName + " (" + steamId + ")";
         return info;
     }
     
@@ -112,7 +84,7 @@ class NT_AdminWhitelist
         }
         else
         {
-            notes += " | " + newNotes;
+            notes = notes + " | " + newNotes;
         }
     }
 };
